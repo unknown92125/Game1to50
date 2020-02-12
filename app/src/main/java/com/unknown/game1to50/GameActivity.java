@@ -1,5 +1,7 @@
 package com.unknown.game1to50;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,10 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.Locale;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -22,55 +25,66 @@ public class GameActivity extends AppCompatActivity {
     private GameAdapter gameAdapter;
     private int count = 1;
     private RecyclerView recyclerView;
-    private TextView tvMin, tvSec;
-    private TimerTask timerTask;
-    private Timer timer;
+    private TextView tvRecord, tvNum;
+    private Calendar calendar;
+    private SimpleDateFormat simpleDateFormat;
+    private String record;
+    private TimerThread timerThread;
+    private long recordMilli;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
-        tvMin = findViewById(R.id.tv_minute_game);
-        tvSec = findViewById(R.id.tv_second_game);
+        tvNum = findViewById(R.id.tv_num_game);
+        tvRecord = findViewById(R.id.tv_record_game);
         recyclerView = findViewById(R.id.rv_game);
         gameAdapter = new GameAdapter();
         recyclerView.setAdapter(gameAdapter);
-        timer = new Timer();
 
+        calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(0);
 
-        startTimer();
+        simpleDateFormat = new SimpleDateFormat("mm:ss:SS", Locale.getDefault());
 
-        timer.schedule(timerTask, 0, 1000);
         addString();
+
+        timerThread = new TimerThread();
+        timerThread.start();
     }
 
-    private void startTimer() {
+    private class TimerThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            while (count < 51) {
+                calendar.add(Calendar.MILLISECOND, 73);
+                record = simpleDateFormat.format(calendar.getTime());
 
-        timerTask = new TimerTask() {
-            int min = 0, sec = 0;
-
-            @Override
-            public void run() {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        tvMin.setText(String.format("%02d", min));
-                        tvSec.setText(String.format("%02d", sec));
+                        tvRecord.setText(record);
                     }
                 });
-                sec++;
-                if (sec == 59) {
-                    min++;
-                    sec = 0;
-                }
-                if (count > 50) {
-                    timer.cancel();
+
+                try {
+                    sleep(71);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-        };
+            recordMilli = calendar.getTimeInMillis();
+            startRestartActivity();
+        }
+    }
 
-
+    private void startRestartActivity() {
+        Intent intent = new Intent(this, RestartActivity.class);
+        intent.putExtra("recordMilli", recordMilli);
+        startActivity(intent);
+        finish();
     }
 
     private void addString() {
@@ -117,7 +131,7 @@ public class GameActivity extends AppCompatActivity {
                             vHolder.button.setVisibility(View.INVISIBLE);
                         }
                         count++;
-
+                        tvNum.setText(count + "");
                     }
                 }
             });
