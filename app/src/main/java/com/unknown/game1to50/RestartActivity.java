@@ -34,7 +34,7 @@ public class RestartActivity extends AppCompatActivity {
         String bestRecord = simpleDateFormat.format(bestRecordMilli);
         tvBestRecord.setText(bestRecord);
 
-        if (recordMilli < bestRecordMilli) {
+        if (recordMilli < bestRecordMilli || bestRecordMilli == 0) {
             SharedPreferences.Editor editor = pref.edit();
             editor.putLong("bestRecordMilli", recordMilli);
             editor.apply();
